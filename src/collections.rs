@@ -148,7 +148,7 @@ pub struct TestCase {
 #[derive(Debug, Clone)]
 pub enum TestResult {
     Success,
-    Skipped,
+    Skipped { type_: String, message: String },
     Error { type_: String, message: String },
     Failure { type_: String, message: String },
 }
@@ -241,11 +241,14 @@ impl TestCase {
     /// Create a new ignored `TestCase`
     ///
     /// An ignored `TestCase` is one where an ignored or skipped
-    pub fn skipped(name: &str) -> Self {
+    pub fn skipped(name: &str, type_: &str, message: &str) -> Self {
         TestCase {
             name: name.into(),
             time: Duration::ZERO,
-            result: TestResult::Skipped,
+            result: TestResult::Skipped {
+                type_: type_.into(),
+                message: message.into(),
+            },
             classname: None,
             filepath: None,
             system_out: None,
@@ -255,7 +258,7 @@ impl TestCase {
 
     /// Check if a `TestCase` ignored
     pub fn is_skipped(&self) -> bool {
-        matches!(self.result, TestResult::Skipped)
+        matches!(self.result, TestResult::Skipped { .. })
     }
 }
 
@@ -318,9 +321,9 @@ impl TestCaseBuilder {
     /// Creates a new TestCaseBuilder for an ignored `TestCase`
     ///
     /// An ignored `TestCase` is one where an ignored or skipped
-    pub fn skipped(name: &str) -> Self {
+    pub fn skipped(name: &str, type_: &str, message: &str) -> Self {
         TestCaseBuilder {
-            testcase: TestCase::skipped(name),
+            testcase: TestCase::skipped(name, type_, message),
         }
     }
 

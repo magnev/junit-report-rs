@@ -186,7 +186,35 @@ impl TestCase {
                                     .map(drop)
                                 },
                             ),
-                        TestResult::Skipped => w.create_element("skipped").write_empty(),
+                        TestResult::Skipped {
+                            ref type_,
+                            ref message,
+                        } => w
+                        .create_element("skipped")
+                        .with_attributes([
+                            ("type", type_.as_str()),
+                            ("message", message.as_str()),
+                        ])
+                        .write_empty_or_inner(
+                            |_| self.system_out.is_none() && self.system_err.is_none(),
+                            |w| {
+                                w.write_opt(self.system_out.as_ref(), |w, stdout| {
+                                    let data = strip_ansi_escapes::strip(stdout.as_str())?;
+                                    w.write_event(Event::CData(BytesCData::new(
+                                        String::from_utf8_lossy(&data),
+                                    )))
+                                    .map(|_| w)
+                                })?
+                                .write_opt(self.system_err.as_ref(), |w, stderr| {
+                                    let data = strip_ansi_escapes::strip(stderr.as_str())?;
+                                    w.write_event(Event::CData(BytesCData::new(
+                                        String::from_utf8_lossy(&data),
+                                    )))
+                                    .map(|_| w)
+                                })
+                                .map(drop)
+                            },
+                        ),
                     }
                     .map(drop)
                 },
